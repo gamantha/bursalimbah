@@ -632,13 +632,13 @@ class BursaLimbahApp {
     this.quickLogin(demoEmail, demoPass, 'seller');
   }
 
-  quickLogin(identifier, password, role) {
+  async quickLogin(identifier, password, role) {
     const inputId = document.getElementById('login-input-identifier');
     const inputPass = document.getElementById('login-input-password');
     if (inputId) inputId.value = identifier;
     if (inputPass) inputPass.value = password;
 
-    const res = this.store.loginUser(identifier, password, role);
+    const res = await this.store.loginUserAsync(identifier, password, role);
     if (res.success) {
       this.triggerConfetti();
       if (res.isNewAccount) {
@@ -656,12 +656,12 @@ class BursaLimbahApp {
     }
   }
 
-  handleLoginFormSubmit(event) {
+  async handleLoginFormSubmit(event) {
     event.preventDefault();
     const identifier = document.getElementById('login-input-identifier').value.trim();
     const password = document.getElementById('login-input-password').value;
 
-    const res = this.store.loginUser(identifier, password, this.currentLoginTab);
+    const res = await this.store.loginUserAsync(identifier, password, this.currentLoginTab);
 
     const alertBox = document.getElementById('login-alert-box');
     const alertMsg = document.getElementById('login-alert-msg');
@@ -718,7 +718,7 @@ class BursaLimbahApp {
     }
   }
 
-  handleSellerRegister(event) {
+  async handleSellerRegister(event) {
     event.preventDefault();
     const company = document.getElementById('reg-seller-company').value.trim();
     const name = document.getElementById('reg-seller-name').value.trim();
@@ -743,7 +743,7 @@ class BursaLimbahApp {
       }
     }
 
-    const newUser = this.store.registerSeller({
+    const res = await this.store.registerSellerAsync({
       company,
       name,
       phone,
@@ -1365,7 +1365,7 @@ class BursaLimbahApp {
     this.renderRegisterTierOptions();
   }
 
-  handleBuyerRegister(event) {
+  async handleBuyerRegister(event) {
     event.preventDefault();
     const name = document.getElementById('reg-buyer-name').value;
     const company = document.getElementById('reg-buyer-company').value;
@@ -1373,7 +1373,7 @@ class BursaLimbahApp {
     const email = document.getElementById('reg-buyer-email').value;
     const password = document.getElementById('reg-buyer-password') ? document.getElementById('reg-buyer-password').value : '123456';
 
-    const newUser = this.store.registerBuyer({
+    const res = await this.store.registerBuyerAsync({
       name,
       company,
       phone,
@@ -2649,10 +2649,10 @@ class BursaLimbahApp {
     }
   }
 
-  proceedGoogleLogin(email, name, avatar) {
+  async proceedGoogleLogin(email, name, avatar) {
     this.closeGoogleLoginModal();
     const role = this.currentLoginTab || 'buyer';
-    const res = this.store.loginWithGoogle({ email, name, avatar, role });
+    const res = await this.store.loginWithGoogleAsync({ email, name, avatar, role });
 
     if (res.success) {
       this.triggerConfetti();
@@ -2672,7 +2672,7 @@ class BursaLimbahApp {
     }
   }
 
-  proceedCustomGoogleLogin() {
+  async proceedCustomGoogleLogin() {
     const input = document.getElementById('custom-google-email');
     const email = input ? input.value.trim().toLowerCase() : '';
     if (!email || !email.includes('@')) {
@@ -2681,7 +2681,7 @@ class BursaLimbahApp {
     }
     const namePart = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
     const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-    this.proceedGoogleLogin(email, displayName, null);
+    await this.proceedGoogleLogin(email, displayName, null);
   }
 
   // ================= MODAL PROFIL & VERIFIKASI IDENTITAS (KTP / NPWP OPSIONAL) =================
