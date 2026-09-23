@@ -759,13 +759,14 @@ class BursaLimbahApp {
 
   async handleSellerRegister(event) {
     event.preventDefault();
-    const company = document.getElementById('reg-seller-company').value.trim();
+    const email = document.getElementById('reg-seller-email').value.trim();
     const name = document.getElementById('reg-seller-name').value.trim();
     const phone = document.getElementById('reg-seller-phone').value.trim();
-    const email = document.getElementById('reg-seller-email').value.trim();
-    const location = document.getElementById('reg-seller-location').value.trim();
-    const bankAccount = document.getElementById('reg-seller-bank').value.trim();
-    const password = document.getElementById('reg-seller-password').value;
+    const password = document.getElementById('reg-seller-password') ? document.getElementById('reg-seller-password').value : '123456';
+
+    const company = name; // Default nama usaha sama dengan nama pengguna
+    const location = 'Indonesia';
+    const bankAccount = '-';
 
     const existing = this.store.state.users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
     if (existing) {
@@ -794,7 +795,7 @@ class BursaLimbahApp {
 
     this.closeModals();
     this.triggerConfetti();
-    this.showToast(`Selamat datang ${company}! Akun Penjual berhasil dibuat.`, 'success');
+    this.showToast(`Selamat datang ${name}! Akun Penjual berhasil dibuat. Lengkapi data rekening & lokasi di Menu Pengaturan.`, 'success');
     this.setRole('seller', false);
   }
 
@@ -1053,6 +1054,14 @@ class BursaLimbahApp {
             <span class="text-sm font-bold text-slate-800">Portal Pembeli</span>
             <i class="fa-solid fa-chevron-right text-slate-400 text-xs ml-auto"></i>
           </button>
+          <button onclick="app.showUserProfileModal()" class="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 transition active:scale-98 text-left">
+            <i class="fa-solid fa-gear text-emerald-600 text-lg w-7 text-center"></i>
+            <div>
+              <p class="text-sm font-bold text-slate-800">Menu Pengaturan Akun</p>
+              <p class="text-[10px] text-slate-500">Ubah nama perusahaan, alamat, rekening & verifikasi</p>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-400 text-xs ml-auto"></i>
+          </button>
           <button onclick="app.showBuyerRegisterModal()" class="w-full flex items-center gap-3 p-3 rounded-2xl bg-amber-50 border border-amber-200 hover:bg-amber-100 transition active:scale-98 text-left">
             <i class="fa-solid fa-crown text-amber-500 text-lg w-7 text-center"></i>
             <span class="text-sm font-bold text-slate-800">Upgrade Berlangganan</span>
@@ -1079,7 +1088,15 @@ class BursaLimbahApp {
             <span class="text-sm font-bold text-slate-800">Dashboard Penjual</span>
             <i class="fa-solid fa-chevron-right text-slate-400 text-xs ml-auto"></i>
           </button>
-          <button onclick="app.showUploadModal()" class="w-full flex items-center gap-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition active:scale-98 text-left">
+          <button onclick="app.showUserProfileModal()" class="w-full flex items-center gap-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition active:scale-98 text-left">
+            <i class="fa-solid fa-gear text-emerald-600 text-lg w-7 text-center"></i>
+            <div>
+              <p class="text-sm font-bold text-slate-800">Menu Pengaturan Akun</p>
+              <p class="text-[10px] text-slate-500">Ubah nama usaha, lokasi gudang, & rekening bank</p>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-400 text-xs ml-auto"></i>
+          </button>
+          <button onclick="app.showUploadModal()" class="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 transition active:scale-98 text-left">
             <i class="fa-solid fa-circle-plus text-emerald-600 text-lg w-7 text-center"></i>
             <span class="text-sm font-bold text-slate-800">Unggah Pasokan Baru</span>
             <i class="fa-solid fa-chevron-right text-slate-400 text-xs ml-auto"></i>
@@ -2078,14 +2095,28 @@ class BursaLimbahApp {
 
   async handleBuyerRegister(event) {
     event.preventDefault();
-    const name = document.getElementById('reg-buyer-name').value;
-    const company = document.getElementById('reg-buyer-company').value;
-    const phone = document.getElementById('reg-buyer-phone').value;
-    const email = document.getElementById('reg-buyer-email').value;
+    const email = document.getElementById('reg-buyer-email').value.trim();
+    const name = document.getElementById('reg-buyer-name').value.trim();
+    const phone = document.getElementById('reg-buyer-phone').value.trim();
     const password = document.getElementById('reg-buyer-password') ? document.getElementById('reg-buyer-password').value : '123456';
 
-    const chosenTierId = this.selectedRegisterTier || 'tier_starter';
-    const isPaidTier = chosenTierId !== 'tier_starter';
+    const company = name; // Default nama perusahaan sama dengan nama penanggung jawab
+    const chosenTierId = 'tier_starter';
+
+    const existing = this.store.state.users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      if (existing.role === 'buyer') {
+        this.showToast(`Email ${email} sudah terdaftar. Silakan langsung masuk.`, 'info');
+        this.closeModals();
+        this.showLoginPage('buyer');
+        const inputId = document.getElementById('login-input-identifier');
+        if (inputId) inputId.value = email;
+        return;
+      } else {
+        this.showToast(`Email ${email} sudah terdaftar sebagai ${existing.role === 'seller' ? 'Penjual' : 'Pengelola'}.`, 'error');
+        return;
+      }
+    }
 
     const res = await this.store.registerBuyerAsync({
       name,
@@ -2094,34 +2125,15 @@ class BursaLimbahApp {
       email,
       password,
       tierId: chosenTierId,
-      subscriptionActive: !isPaidTier
+      subscriptionActive: true
     });
 
     const tier = this.store.getSubscriptionTierById(chosenTierId);
 
-    if (isPaidTier) {
-      const buyerUser = (res && res.user) ? res.user : this.store.getCurrentUser();
-      this.store.createSubscriptionRequest({
-        userId: buyerUser ? buyerUser.id : undefined,
-        userName: name,
-        company: company || name,
-        email,
-        phone,
-        tierId: chosenTierId,
-        paymentProof: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=80"
-      });
-      this.updateAdminSubPendingBadge();
-    }
-
     this.closeModals();
     this.setRole('buyer', false);
     this.triggerConfetti();
-
-    if (isPaidTier) {
-      this.showToast(`Pendaftaran berhasil! Permohonan paket ${tier ? tier.name : 'Berlangganan'} telah dikirim ke Admin untuk verifikasi pembayaran manual.`, 'info');
-    } else {
-      this.showToast(`Selamat datang ${name}! Akun Pembeli aktif dengan ${tier ? tier.name : 'Paket Starter'}.`, 'success');
-    }
+    this.showToast(`Selamat datang ${name}! Akun Pembeli aktif dengan ${tier ? tier.name : 'Paket Starter'}. Lengkapi profil di Menu Pengaturan.`, 'success');
   }
 
   // ================= 4. KATALOG PEMBELI: PENGECEKAN TIER RENTANG HARGA & FITUR =================
